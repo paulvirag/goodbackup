@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<settings>
+	<output path="/backups" />
+	<credentials>
+		<credential name="localdb" username="sqluser" password="p@ssw0rd" />
+	</credentials>
+	<targets>
+		<target name="app1" intervalHours="24">
+			<folder path="/applications/app1" />
+			<file path="/applications/app1.config" />
+			<database name="app1" credential="localdb" />
+		</target>
+		<target name="app2" intervalHours="72">
+			<folder path="/applications/app2" />
+		</target>
+	</targets>
+</settings>
