@@ -168,16 +168,16 @@ def testValidateUniqueAttribute():
 
 def testValidateAttributeReference():
 	# Test cases.
-	doc = '<doc><images><image name="logo" url="/logo.png" /><image name="banner" url="/banner.png" /></images><scripts><script path="/container.js" /></scripts><pages><page name="home"><scriptRef src="/container.js"/><imageRef name="logo"/></page><page name="contact"><imageRef name="banner"/></page><page name="badPage"><imageRef name="invalid"/><scriptRef src="undefined"/></page></pages></doc>'
+	doc = '<doc><images><image name="logo" url="/logo.png" /><image name="banner" url="/banner.png" /></images><scripts><script path="/container.js" /></scripts><pages><homepage><scriptRef src="/container.js"/><imageRef name="logo"/></homepage><contactpage><imageRef name="banner"/></contactpage><badpage><imageRef name="invalid"/><scriptRef src="undefined"/></badpage></pages></doc>'
 
 	passTests = [
-		('./pages/page[@name="home"]/imageRef', 'name', './images/image', 'name'),
-		('./pages/page[@name="home"]/scriptRef', 'src', './scripts/script', 'path'),
-		('./pages/page[@name="contact"]/imageRef', 'name', './images/image', 'name')
+		('./pages/homepage/imageRef', 'name', './images/image', 'name'),
+		('./pages/homepage/scriptRef', 'src', './scripts/script', 'path'),
+		('./pages/contactpage/imageRef', 'name', './images/image', 'name')
 	]
 	failTests = [
-		('./pages/page[@name="badPage"]/imageRef', 'name', './images/image', 'name'),
-		('./pages/page[@name="badPage"]/scriptRef', 'src', './scripts/script', 'path')
+		('./pages/badpage/imageRef', 'name', './images/image', 'name'),
+		('./pages/badpage/scriptRef', 'src', './scripts/script', 'path')
 	]
 
 	# Do tests

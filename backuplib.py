@@ -142,7 +142,10 @@ def doBackup(root):
 				else:
 					log("Warning: Could not find folder " + folder.get('path') + ".")
 			for database in target.findall('./database'):
-				credential = root.find('./credentials/credential[@name="{0}"]'.format(database.get('credential')))
+				for elem in root.findall('./credentials/credential'):
+					if elem.get('name') == database.get('credential'):
+						credential = elem
+						break
 				dumpFile = "{0}/{1}.{2}.sql".format(outputDir, database.get('name'), timestamp)
 				dumpDatabase(database.get('name'), credential.get('username'), credential.get('password'), dumpFile)
 				sources.append(dumpFile)
