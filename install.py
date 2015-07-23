@@ -63,7 +63,7 @@ def main(argv):
 
 	# Append to crontab.
 	if choice in ['y', 'Y']:
-		line = '0\t*\t*\t*\t*\t{0} {1} >> {2}'.format(os.path.dirname(os.path.realpath(__file__)) + '/backup.py', parsedArgs[0], parsedArgs[1])
+		line = '0\t*\t*\t*\t*\t{0} {1} >> {2} 2>&1'.format(os.path.dirname(os.path.realpath(__file__)) + '/backup.py', parsedArgs[0], parsedArgs[1])
 		if len(crontab) > 0:
 			cronEntries = crontab.split('\n')
 			cronEntries = [entry for entry in cronEntries if entry != '']
