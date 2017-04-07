@@ -6,7 +6,7 @@ import backuplib
 
 def usageMsg():
 	print 'backup.py - GoodBackup core backup utility (install using install.py)'
-	print 'Usage: backup.py [path-to-config-file]'
+	print 'Usage: backup.py <path-to-config-file>'
 	print
 
 def parseArgs(argv):

@@ -1,0 +1,11 @@
+# Python stuff
+*.pyc
+
+# C#/VS stuff
+.vs
+bin
+obj
+*.suo
+
+# Project-specific files
+testdata/output

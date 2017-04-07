@@ -131,16 +131,19 @@ def doBackup(root):
 	found = False
 	for target in root.findall('./targets/target'):
 		if int(startTime / 60 / 60) % int(target.get('intervalHours')) == 0:
-			# Build source list.
 			sources = []
 			tempFiles = []
 			found = True
 			log('Starting backup for "{0}".'.format(target.get('name')))
+			
+			# Add folder targets to source list.
 			for folder in target.findall('./folder'):
 				if os.path.isdir(folder.get('path')):
 					sources.append(folder.get('path'))
 				else:
 					log("Warning: Could not find folder " + folder.get('path') + ".")
+					
+			# Add database targets to source list.
 			for database in target.findall('./database'):
 				for elem in root.findall('./credentials/credential'):
 					if elem.get('name') == database.get('credential'):
@@ -150,6 +153,8 @@ def doBackup(root):
 				dumpDatabase(database.get('name'), credential.get('username'), credential.get('password'), dumpFile)
 				sources.append(dumpFile)
 				tempFiles.append(dumpFile)
+			
+			# Add file targets to source list.
 			for file in target.findall('./file'):
 				if os.path.isfile(file.get('path')):
 					sources.append(file.get('path'))

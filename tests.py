@@ -5,6 +5,7 @@ import sys
 import backuplib
 import xml.etree.ElementTree as ET
 import shutil
+import glob
 
 #
 # Types.
@@ -26,21 +27,8 @@ testVerbosity = TestVerbosity.Detailed
 # Test library methods.
 #
 
-def doTest(func, args, expected, testText):
-	if len(args) == 1:
-		res = func(args[0])
-	elif len(args) == 2:
-		res = func(args[0], args[1])
-	elif len(args) == 3:
-		res = func(args[0], args[1], args[2])
-	elif len(args) == 4:
-		res = func(args[0], args[1], args[2], args[3])
-	elif len(args) == 5:
-		res = func(args[0], args[1], args[2], args[3], args[4])
-	else:
-		print 'Method not tested. TODO support more args for test methods.'
-		return False
-	
+def runTest(func, args, expected, testText):
+	res = func(*args)	
 	didPass = (res == expected)
 
 	# Print stuff
@@ -52,12 +40,26 @@ def doTest(func, args, expected, testText):
 		])
 
 	return didPass
+	
+def compareFiles(filePattern1, filePattern2):
+	# Ensure the files exist and have matching contents.
+	files1 = glob.glob(filePattern1)
+	files2 = glob.glob(filePattern2)
+	return len(files1) == 1 and len(files2) == 1 and open(files1[0]).read() == open(files2[0]).read()
+	
+#
+# Mock helper functions.
+#
 
-def doTestMethod(testMethod, methodText):
-	res = testMethod()
-	if testVerbosity >= TestVerbosity.Detailed:
-		print ("PASS" if res else "FAIL") + ": " + methodText
-	return res
+def mockDumpDatabase(dbname, username, password, outfile):
+	if os.path.isfile(outfile):
+		os.remove(outfile)
+	os.system('echo {0} >> {1}'.format(dbname, outfile))
+	os.system('echo {0} >> {1}'.format(username, outfile))
+	os.system('echo {0} >> {1}'.format(password, outfile))
+
+def mockLog(line):
+	pass
 
 #
 # Test methods.
@@ -76,9 +78,9 @@ def testValidateRequiredSection():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateRequiredSection, [ET.fromstring(test[0]), test[1]], True, "Ensure we correctly detect required sections.")
+		res &= runTest(backuplib.validateRequiredSection, [ET.fromstring(test[0]), test[1]], True, "Ensure we correctly detect required sections.")
 	for test in failTests:
-		res &= doTest(backuplib.validateRequiredSection, [ET.fromstring(test[0]), test[1]], False, "Ensure we correctly detect when required sections are absent.")
+		res &= runTest(backuplib.validateRequiredSection, [ET.fromstring(test[0]), test[1]], False, "Ensure we correctly detect when required sections are absent.")
 
 	return res
 
@@ -98,9 +100,9 @@ def testValidateUniqueSection():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateUniqueSection, [ET.fromstring(test[0]), test[1]], True, "Ensure we correctly detect when sections are unique.")
+		res &= runTest(backuplib.validateUniqueSection, [ET.fromstring(test[0]), test[1]], True, "Ensure we correctly detect when sections are unique.")
 	for test in failTests:
-		res &= doTest(backuplib.validateUniqueSection, [ET.fromstring(test[0]), test[1]], False, "Ensure we correctly detect when sections aren't unique.")
+		res &= runTest(backuplib.validateUniqueSection, [ET.fromstring(test[0]), test[1]], False, "Ensure we correctly detect when sections aren't unique.")
 
 	return res
 
@@ -120,9 +122,9 @@ def testValidateRequiredAttribute():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateRequiredAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we detect when attributes are present.")
+		res &= runTest(backuplib.validateRequiredAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we detect when attributes are present.")
 	for test in failTests:
-		res &= doTest(backuplib.validateRequiredAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect when attributes are missing.")
+		res &= runTest(backuplib.validateRequiredAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect when attributes are missing.")
 
 	return res
 
@@ -139,9 +141,9 @@ def testValidateIntAttribute():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateIntAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we detect integer attributes")
+		res &= runTest(backuplib.validateIntAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we detect integer attributes")
 	for test in failTests:
-		res &= doTest(backuplib.validateIntAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect invalid integer attributes")
+		res &= runTest(backuplib.validateIntAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect invalid integer attributes")
 
 	return res
 
@@ -160,9 +162,9 @@ def testValidateUniqueAttribute():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateUniqueAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we can detect attribute uniqueness.")
+		res &= runTest(backuplib.validateUniqueAttribute, [ET.fromstring(test[0]), test[1], test[2]], True, "Ensure we can detect attribute uniqueness.")
 	for test in failTests:
-		res &= doTest(backuplib.validateUniqueAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect when attributes fail to be unique.")
+		res &= runTest(backuplib.validateUniqueAttribute, [ET.fromstring(test[0]), test[1], test[2]], False, "Ensure we detect when attributes fail to be unique.")
 
 	return res
 
@@ -183,9 +185,9 @@ def testValidateAttributeReference():
 	# Do tests
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateAttributeReference, [ET.fromstring(doc), test[0], test[1], test[2], test[3]], True, "Ensure we can resolve attribute references.")
+		res &= runTest(backuplib.validateAttributeReference, [ET.fromstring(doc), test[0], test[1], test[2], test[3]], True, "Ensure we can resolve attribute references.")
 	for test in failTests:
-		res &= doTest(backuplib.validateAttributeReference, [ET.fromstring(doc), test[0], test[1], test[2], test[3]], False, "Ensure we can detect broken attribute references.")
+		res &= runTest(backuplib.validateAttributeReference, [ET.fromstring(doc), test[0], test[1], test[2], test[3]], False, "Ensure we can detect broken attribute references.")
 
 	return res
 
@@ -206,9 +208,9 @@ def testValidateTopLevelXml():
 	# Do tests.
 	res = True
 	for test in passTests:
-		res &= doTest(backuplib.validateConfig, [ET.fromstring(test)], True, "Ensure valid XML is accepted")
+		res &= runTest(backuplib.validateConfig, [ET.fromstring(test)], True, "Ensure valid XML is accepted")
 	for test in failTests:
-		res &= doTest(backuplib.validateConfig, [ET.fromstring(test)], False, "Ensure bad XML is rejected")
+		res &= runTest(backuplib.validateConfig, [ET.fromstring(test)], False, "Ensure bad XML is rejected")
 
 	return res
 
@@ -253,110 +255,67 @@ def testValidateInnerXml():
 
 	# Do passing tests.
 	res = True
-	res &= doTest(backuplib.validateConfig, [ET.fromstring(template.format(passCredential, passTarget))], True, "Ensure valid inner XML is accepted")
+	res &= runTest(backuplib.validateConfig, [ET.fromstring(template.format(passCredential, passTarget))], True, "Ensure valid inner XML is accepted")
 	
 	# Do failing tests.
 	failTests = [[template.format(passCredential, target) for target in failTargets], [template.format(credential, passTarget) for credential in failCredentials]]
 	for test in [elem for vec in failTests for elem in vec]:
-		res &= doTest(backuplib.validateConfig, [ET.fromstring(test)], False, "Ensure bad inner XML is rejected")
+		res &= runTest(backuplib.validateConfig, [ET.fromstring(test)], False, "Ensure bad inner XML is rejected")
 
 	return res
 
-def mockDumpDatabase(dbname, username, password, outfile):
-	if os.path.isfile(outfile):
-		os.remove(outfile)
-	os.system('echo {0} >> {1}'.format(dbname, outfile))
-	os.system('echo {0} >> {1}'.format(username, outfile))
-	os.system('echo {0} >> {1}'.format(password, outfile))
-
-def mockLog(line):
-	pass
-
 def testBackup():
-	# Set up filesystem.
-	os.system('echo test > testfile1.txt')
-	os.system('mkdir testfolder1')
-	os.system('echo me > testfolder1/testfile2.txt')
-	os.system('mkdir testfolder2')
-	os.system('echo pretty > testfolder2/testfile3.txt')
-	os.system('echo please > testfolder2/testfile4.txt')
-	os.system('mkdir testoutputdir')
+	# Prepare filesystem.
+	os.system('rm -rf testdata/output')
+	os.system('mkdir testdata/output')
 
 	# Create test configuration.
 	config = """<?xml version="1.0"?>
 				<settings>
-					<output path="testoutputdir" />
+					<output path="testdata/output" />
 					<credentials>
 						<credential name="database" username="user" password="pass" />
 					</credentials>
 					<targets>
 						<target name="testapp1" intervalHours="1">
-							<file path="testfile1.txt" />
-							<folder path="testfolder2" />
+							<file path="testdata/input/testfile1.txt" />
+							<folder path="testdata/input/testfolder2" />
 							<database name="testapp1" credential="database" />
 						</target>
 						<target name="testapp2" intervalHours="1">
-							<file path="testfolder1/testfile2.txt" />
+							<file path="testdata/input/testfolder1/testfile2.txt" />
 							<database name="testapp2" credential="database" />
 						</target>
 					</targets>
 				</settings>"""
 
 	# Mock out the MySQL dump routine and logging statements.
+	dumpDatabase = backuplib.dumpDatabase
+	log = backuplib.log
 	backuplib.dumpDatabase = mockDumpDatabase
 	backuplib.log = mockLog
 
 	# Do backup.
 	backuplib.doBackup(ET.fromstring(config))
-
-	# Clean up input files.
-	os.remove('testfile1.txt')
-	os.remove('testfolder1/testfile2.txt')
-	os.remove('testfolder2/testfile3.txt')
-	os.remove('testfolder2/testfile4.txt')
-	os.rmdir('testfolder1')
-	os.rmdir('testfolder2')
-
-	# Pop open the first archive and verify filesystem state.
+	
+	# Restore the mocked helper functions.
+	backuplib.log = log
+	backuplib.dumpDatabase = dumpDatabase
+	
+	# Verify output for testapp1.
 	res = True
-	os.system('tar xzf testoutputdir/testapp1*')
-	res &= os.path.isfile('testfile1.txt') # Verify file existence
-	res &= os.path.isfile('testfolder2/testfile3.txt') # Verify file existence
-	testfile1 = open('testfile1.txt')
-	res &= (testfile1.read() == 'test\n') # Verify file contents
-	testfile4 = open('testfolder2/testfile4.txt')
-	res &= (testfile4.read() == 'please\n') # Verify file contents
-	sqlFiles = [sqlFile for sqlFile in os.listdir('.') if '.sql' in sqlFile and 'testapp1' in sqlFile]
-	res &= len(sqlFiles) == 1 # Verify SQL file existence
-	if len(sqlFiles) == 1:
-		sqlFile1 = open(sqlFiles[0])
-		res &= (sqlFile1.read() == 'testapp1\nuser\npass\n') # Verify SQL file contents
-		sqlFile1.close()
-	res &= not os.path.isfile('testfile2.txt') # Verify this file isn't in the testapp1 backup
-
-	# Pop open the second archive.
-	os.system('tar xzf testoutputdir/testapp2*')
-	res &= os.path.isfile('testfile2.txt') # Verify file was in the testapp2 backup
-	testfile2 = open('testfile2.txt')
-	res &= (testfile2.read() == 'me\n') # Verify file contents
-	sqlFiles = [sqlFile for sqlFile in os.listdir('.') if '.sql' in sqlFile and 'testapp2' in sqlFile]
-	res &= len(sqlFiles) == 1 # Verify SQL file existence
-	if len(sqlFiles) == 1:
-		sqlFile2 = open(sqlFiles[0])
-		res &= (sqlFile2.read() == 'testapp2\nuser\npass\n') # Verify SQL file contents
-		sqlFile2.close()
-
-	# Clean up extracted files.
-	os.remove('testfile1.txt')
-	os.remove('testfile2.txt') # After extraction, this file will be in the root folder.
-	os.remove('testfolder2/testfile3.txt')
-	os.remove('testfolder2/testfile4.txt')
-	os.rmdir('testfolder2')
-
-	# Clean up output files.
-	for sqlFile in [sqlFile for sqlFile in os.listdir('.') if '.sql' in sqlFile and 'testapp' in sqlFile]:
-		os.remove(sqlFile)
-	shutil.rmtree('testoutputdir')
+	os.mkdir('testdata/output/testapp1')
+	os.system('tar xzf testdata/output/testapp1*.tar.gz -C testdata/output/testapp1')
+	res &= compareFiles('testdata/input/testfile1.txt', 'testdata/output/testapp1/testfile1.txt')
+	res &= compareFiles('testdata/input/testfolder2/testfile3.txt', 'testdata/output/testapp1/testfolder2/testfile3.txt')
+	res &= compareFiles('testdata/input/testfolder2/testfile4.txt', 'testdata/output/testapp1/testfolder2/testfile4.txt')
+	res &= compareFiles('testdata/input/testapp1.sql', 'testdata/output/testapp1/testapp1.*.sql')
+	
+	# Verify output for testapp2.
+	os.mkdir('testdata/output/testapp2')
+	os.system('tar xzf testdata/output/testapp2*.tar.gz -C testdata/output/testapp2')
+	res &= compareFiles('testdata/input/testfolder1/testfile2.txt', 'testdata/output/testapp2/testfile2.txt')
+	res &= compareFiles('testdata/input/testapp2.sql', 'testdata/output/testapp2/testapp2.*.sql')
 
 	return res
 
@@ -368,7 +327,7 @@ def runAllTests():
 	testMethods = [
 		(testValidateRequiredSection, "Test required sections helper"),
 		(testValidateUniqueSection, "Test unique sections helper"),
-		(testValidateRequiredAttribute, "Test rqeuired attribute helper"),
+		(testValidateRequiredAttribute, "Test required attribute helper"),
 		(testValidateIntAttribute, "Test int attribute helper"),
 		(testValidateUniqueAttribute, "Test unique attributes helper"),
 		(testValidateAttributeReference, "Test attribute references helper"),
@@ -378,11 +337,14 @@ def runAllTests():
 	]
 
 	# Run tests.
-	res = True
+	resAll = True
 	for testMethod in testMethods:
-		res &= doTestMethod(testMethod[0], testMethod[1])
+		res = testMethod[0]()
+		resAll &= res
+		if testVerbosity >= TestVerbosity.Detailed:
+			print ("PASS" if res else "FAIL") + ": " + testMethod[1]
 	
 	if testVerbosity >= TestVerbosity.Summary:
-		print "All tests passed." if res else "One or more tests failed."
+		print "All tests passed." if resAll else "One or more tests failed."
 
 runAllTests()

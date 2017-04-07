@@ -7,7 +7,7 @@ import backuplib
 
 def usageMsg():
 	print 'validate.py - GoodBackup config file validation utility'
-	print 'Usage: validate.py [path-to-config-file]'
+	print 'Usage: validate.py <path-to-config-file>'
 	print
 
 def parseArgs(argv):
