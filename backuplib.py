@@ -74,7 +74,8 @@ def dumpDatabase(dbname, username, password, outfile):
 def log(line):
 	startTime = time.time()
 	timestamp = datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S.%f')
-	print '[' + timestamp + '] ' + line
+	print '[{0}] {1}'.format(timestamp, line)
+	sys.stdout.flush()
 
 #
 # Public API methods.
